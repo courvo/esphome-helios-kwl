@@ -1,27 +1,36 @@
 esphome:
-  name: helios-kwl
-  platform: ESP32
-  board: wemos_d1_mini32
+  name: esp32-helios-kwl
+  friendly_name: esp32-helios-kwl
   includes:
-    - helios-kwl.h
+  - helios-kwl.h
 
+esp32:
+  board: wemos_d1_mini32
 
 # Enable logging
 logger:
-  level: DEBUG
-  #baud_rate: 0
+  level: debug
 
 # Enable Home Assistant API
 api:
-  password: !secret api_key
+  encryption:
+    key: !secret secret_api_key
 
 ota:
-  password: ""
+  password: !secret ota_password
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  domain: ".localdomain"
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp32-Helios-Kwl"
+    password: "9xsnlgHfRA9W"
+
+captive_portal:
+
+#below the config for KWL control begins
 
 status_led:
   pin: GPIO2
@@ -35,28 +44,32 @@ sensor:
     id: sensor_temperature_outside
     platform: template
     unit_of_measurement: "°C"
-    accuracy_decimals: 0
+    accuracy_decimals: 1
     lambda: "return {};"
+
   - name: "Temperature exhaust"
     id: sensor_temperature_exhaust
     platform: template
     unit_of_measurement: "°C"
-    accuracy_decimals: 0
+    accuracy_decimals: 1
     lambda: "return {};"
+
   - name: "Temperature inside"
     id: sensor_temperature_inside
     platform: template
     unit_of_measurement: "°C"
-    accuracy_decimals: 0
+    accuracy_decimals: 1
     lambda: "return {};"
+
   - name: "Temperature incoming"
     id: sensor_temperature_incoming
     platform: template
     unit_of_measurement: "°C"
-    accuracy_decimals: 0
+    accuracy_decimals: 1
     lambda: "return {};"
-  - name: "Fan speed"
-    id: fan_speed
+
+  - name: "Actual Fan speed"
+    id: act_fan_speed
     platform: template
     accuracy_decimals: 0
     lambda: "return {};"
@@ -67,20 +80,24 @@ binary_sensor:
     platform: template
     device_class: power
     lambda: "return {};"
+
   - name: "By-pass state"
     id: bypass_state
     platform: template
     lambda: "return {};"
+
   - name: "Heating indicator"
     id: heating_indicator
     platform: template
     device_class: heat
     lambda: "return {};"
+
   - name: "Fault indicator"
     id: fault_indicator
     platform: template
     device_class: problem
     lambda: "return {};"
+
   - name: "Service reminder"
     id: service_reminder
     platform: template
@@ -100,10 +117,10 @@ uart:
     #dummy_receiver: true
 
 custom_component:
-  - lambda: |-
+  - lambda: |- 
       auto helios_kwl = new HeliosKwlComponent(
         id(uart_bus),
-        id(fan_speed),
+        id(act_fan_speed),
         id(sensor_temperature_outside),
         id(sensor_temperature_exhaust),
         id(sensor_temperature_inside),
@@ -113,6 +130,7 @@ custom_component:
         id(heating_indicator),
         id(fault_indicator),
         id(service_reminder)
+
       );
       App.register_component(helios_kwl);
       return {helios_kwl};
@@ -122,9 +140,10 @@ custom_component:
 
 fan:
   - platform: speed
-    output: helios_kwl_speed
+    name: "KWL Fan speed"
     speed_count: 8
-    name: "Fan speed"
+    output: helios_kwl_speed
+    
 
 output:
   - platform: custom
@@ -150,3 +169,7 @@ output:
 
     outputs:
       id: helios_kwl_winter
+      
+
+      
+      
